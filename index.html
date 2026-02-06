@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Casus - Türkiye Edisyonu</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #0a0a0f;
+  --card: #151520;
+  --card-border: #252535;
+  --accent: #ff3b5c;
+  --accent-glow: rgba(255, 59, 92, 0.3);
+  --green: #34d399;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --text: #f0f0f5;
+  --text-dim: #6b6b80;
+  --radius: 16px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+
+.screen { display: none; min-height: 100dvh; padding: 20px; flex-direction: column; }
+.screen.active { display: flex; }
+
+.header { text-align: center; padding: 20px 0 10px; }
+.header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+.header h1 span { color: var(--accent); }
+.header p { color: var(--text-dim); font-size: 14px; margin-top: 4px; }
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 16px; border: none; border-radius: var(--radius);
+  font-size: 17px; font-weight: 600; cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+  font-family: inherit;
+}
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--card-border); }
+.btn-small { padding: 10px 16px; font-size: 14px; width: auto; border-radius: 10px; }
+.btn-ghost { background: transparent; color: var(--text-dim); padding: 10px; font-size: 14px; }
+
+.player-section { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24px; }
+.player-counter { display: flex; align-items: center; gap: 24px; }
+.player-counter .num {
+  font-size: 72px; font-weight: 800; min-width: 80px; text-align: center;
+  background: linear-gradient(135deg, var(--accent), #ff6b8a);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.counter-btn {
+  width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--card-border);
+  background: var(--card); color: var(--text); font-size: 24px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; transition: transform 0.15s;
+}
+.counter-btn:active { transform: scale(0.9); }
+
+.spy-counter { display: flex; align-items: center; gap: 16px; }
+.spy-counter .num { font-size: 36px; font-weight: 700; min-width: 40px; text-align: center; color: var(--accent); }
+.spy-counter .counter-btn { width: 40px; height: 40px; font-size: 18px; }
+
+.categories-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 10px 0; flex: 1; align-content: start;
+}
+.cat-card {
+  background: var(--card); border: 2px solid var(--card-border); border-radius: var(--radius);
+  padding: 14px; cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.cat-card.selected { border-color: var(--accent); background: rgba(255, 59, 92, 0.1); }
+.cat-card .emoji { font-size: 28px; margin-bottom: 6px; }
+.cat-card .name { font-size: 13px; font-weight: 600; }
+.cat-card .count { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.select-actions { display: flex; gap: 10px; padding: 10px 0; }
+
+.reveal-area {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; text-align: center;
+}
+.role-card {
+  width: 100%; max-width: 320px; border-radius: 20px; padding: 40px 24px;
+  position: relative; overflow: hidden;
+}
+.role-card.spy-card {
+  background: linear-gradient(135deg, #1a0008, #2d0015, #1a0008);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+.role-card.normal-card {
+  background: linear-gradient(135deg, #0a1628, #0f1f3d, #0a1628);
+  border: 2px solid var(--blue);
+  box-shadow: 0 0 40px rgba(96, 165, 250, 0.2);
+}
+.role-card .role-icon { font-size: 56px; margin-bottom: 12px; }
+.role-card .role-title { font-size: 14px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; }
+.role-card .role-value { font-size: 26px; font-weight: 800; margin-top: 8px; }
+.role-card .role-sub { font-size: 15px; color: var(--text-dim); margin-top: 8px; }
+
+.role-hidden {
+  width: 100%; max-width: 320px; border-radius: 20px; padding: 60px 24px;
+  background: var(--card); border: 2px dashed var(--card-border);
+  text-align: center; cursor: pointer;
+}
+.role-hidden .tap-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.role-hidden p { color: var(--text-dim); font-size: 15px; }
+.role-hidden .player-num { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+
+.progress-bar { width: 100%; max-width: 320px; height: 4px; background: var(--card); border-radius: 2px; overflow: hidden; }
+.progress-bar .fill { height: 100%; background: var(--accent); transition: width 0.3s; border-radius: 2px; }
+
+.timer-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+.timer-display {
+  font-size: 80px; font-weight: 800; font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, var(--text), #a0a0b0);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.timer-display.warning { background: linear-gradient(135deg, var(--yellow), #f59e0b); -webkit-background-clip: text; }
+.timer-display.danger { background: linear-gradient(135deg, var(--accent), #ff6b8a); -webkit-background-clip: text; }
+.timer-controls { display: flex; gap: 12px; }
+.timer-presets { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.timer-presets .btn-small { min-width: 60px; }
+.timer-presets .btn-small.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.location-hint { background: var(--card); border-radius: var(--radius); padding: 16px; text-align: center; width: 100%; max-width: 320px; }
+.location-hint .label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.location-hint .value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+
+.bottom-actions { padding: 16px 0; display: flex; flex-direction: column; gap: 10px; }
+.bottom-actions-row { display: flex; gap: 10px; }
+.bottom-actions-row .btn { flex: 1; }
+
+.rules-content { flex: 1; overflow-y: auto; padding: 16px 0; }
+.rules-content h3 { font-size: 17px; margin: 16px 0 8px; color: var(--accent); }
+.rules-content h3:first-child { margin-top: 0; }
+.rules-content p, .rules-content li { font-size: 15px; line-height: 1.6; color: var(--text-dim); }
+.rules-content ul { padding-left: 20px; }
+.rules-content li { margin-bottom: 6px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.pulse { animation: pulse 1.5s ease infinite; }
+
+.location-list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 0; }
+.location-list-grid .loc-item {
+  background: var(--card); border-radius: 10px; padding: 10px;
+  font-size: 13px; text-align: center; border: 1px solid var(--card-border);
+}
+.location-list-grid .cat-label {
+  grid-column: 1 / -1; font-size: 12px; color: var(--accent);
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  padding: 8px 0 2px;
+}
+</style>
+</head>
+<body>
+
+<div id="home" class="screen active">
+  <div class="header">
+    <h1>🕵️ <span>Casus</span></h1>
+    <p>Türkiye Edisyonu</p>
+  </div>
+  <div class="player-section">
+    <div>
+      <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-bottom:8px;">Oyuncu Sayısı</p>
+      <div class="player-counter">
+        <button class="counter-btn" onclick="changePlayerCount(-1)">−</button>
+        <div class="num" id="playerCount">4</div>
+        <button class="counter-btn" onclick="changePlayerCount(1)">+</button>
+      </div>
+    </div>
+    <div>
+      <p style="text-align:center;color:var(--text-dim);font-size:13px;margin-bottom:8px;">Casus Sayısı</p>
+      <div class="spy-counter">
+        <button class="counter-btn" onclick="changeSpyCount(-1)">−</button>
+        <div class="num" id="spyCount">1</div>
+        <button class="counter-btn" onclick="changeSpyCount(1)">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-primary" onclick="goToCategories()">Kategorileri Seç</button>
+    <div class="bottom-actions-row">
+      <button class="btn btn-secondary" onclick="showRules()">Nasıl Oynanır?</button>
+      <button class="btn btn-secondary" onclick="quickStart()">Hızlı Başla</button>
+    </div>
+  </div>
+</div>
+
+<div id="categories" class="screen">
+  <div class="header">
+    <h1>Kategoriler</h1>
+    <p>Oynamak istediğin kategorileri seç</p>
+  </div>
+  <div class="select-actions">
+    <button class="btn btn-small btn-secondary" onclick="selectAllCats()">Hepsini Seç</button>
+    <button class="btn btn-small btn-secondary" onclick="deselectAllCats()">Temizle</button>
+  </div>
+  <div class="categories-grid" id="catGrid"></div>
+  <div class="bottom-actions">
+    <button class="btn btn-primary" onclick="startGame()">Oyunu Başlat</button>
+    <button class="btn btn-ghost" onclick="showScreen('home')">← Geri</button>
+  </div>
+</div>
+
+<div id="reveal" class="screen">
+  <div class="header">
+    <h1>Kartları Dağıt</h1>
+    <p id="revealSub">Telefonu sırayla herkese ver</p>
+  </div>
+  <div class="reveal-area" id="revealArea"></div>
+  <div class="bottom-actions">
+    <button class="btn btn-ghost" onclick="showScreen('home')">Oyunu Bitir</button>
+  </div>
+</div>
+
+<div id="timer" class="screen">
+  <div class="timer-section">
+    <div class="location-hint" id="locationHint">
+      <div class="label">Mekan / Kişi</div>
+      <div class="value" id="locationDisplay">—</div>
+    </div>
+    <div class="timer-display" id="timerDisplay">08:00</div>
+    <div class="timer-presets" id="timerPresets">
+      <button class="btn btn-small btn-secondary" onclick="setTimer(300)">5dk</button>
+      <button class="btn btn-small btn-secondary active" onclick="setTimer(480)">8dk</button>
+      <button class="btn btn-small btn-secondary" onclick="setTimer(600)">10dk</button>
+    </div>
+    <div class="timer-controls">
+      <button class="btn btn-small btn-primary" id="timerToggle" onclick="toggleTimer()">Başlat</button>
+      <button class="btn btn-small btn-secondary" onclick="resetTimer()">Sıfırla</button>
+    </div>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-secondary" onclick="showLocations()">Mekan Listesi</button>
+    <button class="btn btn-ghost" onclick="showScreen('home')">Ana Menü</button>
+  </div>
+</div>
+
+<div id="rules" class="screen">
+  <div class="header"><h1>Nasıl Oynanır?</h1></div>
+  <div class="rules-content">
+    <h3>Oyunun Amacı</h3>
+    <p>Herkese bir mekan/kişi kartı dağıtılır. Bir (veya daha fazla) kişi <strong>Casus</strong> olarak atanır ve mekanı/kişiyi bilmez. Casus mekanı bulmaya, diğerleri casusu bulmaya çalışır.</p>
+    <h3>Oyun Akışı</h3>
+    <ul>
+      <li>Telefon sırayla elden ele geçer, herkes kartına bakar</li>
+      <li>Sırayla birbirinize sorular sorun (örn: "Orada ne yaparsın?", "Bu kişiyi nasıl tanımlarsın?")</li>
+      <li>Cevaplar kısa ve belirsiz olabilir ama çok kaçamak olursan şüphe çekersin!</li>
+      <li>Süre bitince veya biri "OYLAMA!" dediğinde herkes casusu tahmin eder</li>
+    </ul>
+    <h3>Kazanma</h3>
+    <ul>
+      <li><strong>Casus kazanır:</strong> Mekanı/kişiyi doğru tahmin ederse VEYA oylamada yakalanmazsa</li>
+      <li><strong>Diğerleri kazanır:</strong> Oylamada casusu bulurlarsa</li>
+    </ul>
+    <h3>İpuçları</h3>
+    <ul>
+      <li>Sorularınız çok açık olmasın - casusu değil ama casusa ipucu verirsin!</li>
+      <li>Cevapların çok belirsiz olması da şüphe çeker</li>
+      <li>Casus: Soruları iyi dinle, cevaplardan çıkarım yap</li>
+    </ul>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-primary" onclick="showScreen('home')">Tamam</button>
+  </div>
+</div>
+
+<div id="locations" class="screen">
+  <div class="header">
+    <h1>Mekan Listesi</h1>
+    <p>Bu turda olası mekanlar</p>
+  </div>
+  <div class="location-list-grid" id="locationListGrid" style="flex:1;overflow-y:auto;"></div>
+  <div class="bottom-actions">
+    <button class="btn btn-primary" onclick="showScreen('timer')">Geri</button>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  "gunluk": {
+    name: "Günlük Hayat", emoji: "🏠",
+    locations: [
+      "Askere uğurlama otobüsü", "Sünnet düğünü", "Kına gecesi",
+      "Apartman yönetim toplantısı", "Site WhatsApp grubu kavgası",
+      "Bayramda akraba turu arabası", "Nüfus müdürlüğü kuyruğu",
+      "Muhtarlık", "Düğünde halay başı", "Cenaze evi taziye çadırı",
+      "Cami avlusu bayram namazı çıkışı", "Kurban kesim yeri",
+      "Sokak düğünü (yol kapatılmış)", "Nişan bozma toplantısı",
+      "Emlakçıda pazarlık", "Oto galeri (ikinci el)",
+      "Esnaf lokantası öğle arası", "Kapıcı dairesi",
+      "Mahalle bakkalı (veresiye defteri olan)", "Yol kenarı radar noktası",
+      "Devlet hastanesi acil bekleme", "Şehirlerarası otobüs molası",
+      "Otogar", "Piknik alanı mangal savaşı",
+      "AVM food court", "Pazar yeri (semt pazarı)",
+      "Yaz okulu (zorla gönderilen)", "Nöbetçi eczane kuyruğu",
+      "Ehliyet sınavı", "Askerlik şubesi",
+      "Komşuya şeker-tuz istemeye gitme", "Camcı dükkanı",
+      "Gurbetçi akrabanın yaz ziyareti", "Apartman çamaşırhane sırası",
+      "Anne-baba ile araba yolculuğu", "Akraba çocuğuna ödev yaptırma"
+    ],
+    roles: ["Damat", "Gelin", "Kayınvalide", "Muhtar", "Komşu", "Emlakçı", "Şoför", "Müdür", "Memur", "Abla", "Amca", "Dayı"]
+  },
+  "yeme": {
+    name: "Yeme İçme", emoji: "🍖",
+    locations: [
+      "Balık ekmek tezgahı", "Kokoreççi", "Iskender kebapçısı",
+      "Çiğ köfteci", "Meyhane (fasıl gecesi)", "Büfe (tost-ayran)",
+      "Tantuni tezgahı", "Kumpirci", "Midyeci",
+      "Seyyar kestaneci", "Gece 3'te açık börekçi",
+      "Düğün yemeği servisi (koca kazan)", "Ramazan iftar çadırı",
+      "Ciğerci (sabah 6)", "Yol kenarı gözlemeci",
+      "Köy kahvaltısı sofrası", "Nargile kafesi",
+      "Simit arabası", "Muhallebici",
+      "Askıda ekmek fırını", "Dönerci (gece vardiyası)",
+      "Lahmacuncu", "Pideci", "Seyyar mısırcı",
+      "Tatlıcı (künefe sırası)", "Mahallenin çorbacısı",
+      "Yol kenarı karpuz tezgahı", "Köfteci (ızgara duman)",
+      "Mantiıcı", "Yemek siparişi tartışması (ne yiyelim)"
+    ],
+    roles: ["Aşçıbaşı", "Garson", "Bulaşıkçı", "Patron", "Müdavim", "Çırak", "Kurye", "Tezgahtar", "Kasap", "Fırıncı"]
+  },
+  "cay": {
+    name: "Çay & Kahve Kültürü", emoji: "☕",
+    locations: [
+      "Çay bahçesi (emekliler masası)", "Kahvehane (okey masası)",
+      "Kahvehane (tavla turnuvası)", "Kıraathane",
+      "Çay ocağı (devlet dairesi)", "Nargile kafesi",
+      "Türk kahvesi falı bakılan ev", "Çaycının motoru (ofis çay servisi)",
+      "Piknik mangal yanı çay demliği", "Sahil çay bahçesi",
+      "Camii önü çay sohbeti", "Esnafın çay molası"
+    ],
+    roles: ["Çaycı", "Emekli amca", "Tavla oynayan", "Falcı", "Okeyciler", "Patron", "Garson"]
+  },
+  "okul": {
+    name: "Okul & Üniversite", emoji: "📚",
+    locations: [
+      "Kantin (simit-ayran kuyruğu)", "Teneffüste koridor",
+      "Müdürün odası", "Beden eğitimi sahası", "Fen laboratuvarı",
+      "Sınav salonu (kopya anı)", "Mezuniyet töreni",
+      "Üniversite yemekhane", "KYK yurdu odası",
+      "Kütüphane (sınav haftası)", "Kampüs çimleri",
+      "Öğrenci kulübü standı", "Üniversite kafeteryası",
+      "Hoca odası (vize notları)", "Dershane (YKS hazırlık)",
+      "Okul servisi (sabah uykusu)", "Karne günü",
+      "Veli toplantısı", "Yurtta gece sohbeti",
+      "Ödev teslim günü (son gece panik)", "Staj başvurusu kuyruğu"
+    ],
+    roles: ["Müdür", "Hoca", "Öğrenci", "Kantinci", "Hademe", "Rehber öğretmen", "Asistan", "Sınıf başkanı"]
+  },
+  "askeriye": {
+    name: "Askeriye", emoji: "🪖",
+    locations: [
+      "Kışla (sabah yoklaması)", "Nöbet kulübesi",
+      "Asker ocağı (yemek sırası)", "Eğitim alanı (sürünme parkuru)",
+      "Terhis günü kapı önü", "Askerlik şubesi kuyruğu",
+      "Bedelli askerlik kayıt", "Koğuş (gece nöbet değişimi)",
+      "Askere mektup yazma masası", "İzin günü otobüs terminali",
+      "Yemin töreni (aile tribünü)", "Kışla kantini"
+    ],
+    roles: ["Er", "Çavuş", "Komutan", "Nöbetçi", "Aşçı", "Sağlıkçı", "Terhisçi", "Acemi"]
+  },
+  "dugun": {
+    name: "Düğün & Nişan", emoji: "💍",
+    locations: [
+      "Kına gecesi (göbek atma)", "Düğün salonu (sahne önü)",
+      "Gelin arabası (konvoy)", "Damat tıraşı (berber)",
+      "Nişan masası (söz kesme)", "Takı töreni (altın sayma)",
+      "Düğün fotoğraf çekimi", "Gelin kapısı (bahşiş pazarlığı)",
+      "Düğün davetiyesi dağıtma", "Nikah masası (belediye)",
+      "Düğün organizatörü ofisi", "Gelinlik mağazası",
+      "Düğün sonrası temizlik", "Takı sayma odası",
+      "Kız isteme çay servisi"
+    ],
+    roles: ["Damat", "Gelin", "Kayınvalide", "Sağdıç", "DJ", "Kameraman", "Organizatör", "Halaybaşı", "Takı takan teyze"]
+  },
+  "tv": {
+    name: "TV & Medya", emoji: "📺",
+    locations: [
+      "Survivor eleme konseyi", "Masterchef mutfağı",
+      "Çarkıfelek stüdyosu", "Magazin programı canlı yayın",
+      "Dizi seti (mahalle sahnesi)", "Yetenek Sizsiniz jüri masası",
+      "Sabah programı (canlı bağlantı)", "Haber stüdyosu (son dakika)",
+      "Yarışma programı finali", "O Ses Türkiye koltukları",
+      "Kurtlar Vadisi seti", "Survivor ada konseyi",
+      "Evlilik programı (tanışma)", "Müge Anlı canlı yayın"
+    ],
+    roles: ["Sunucu", "Yarışmacı", "Jüri üyesi", "Kameraman", "Yapımcı", "Spikerci", "Yönetmen", "Senarist"]
+  },
+  "unluer": {
+    name: "Ünlüler (Meme Tier)", emoji: "⭐",
+    locations: [
+      "Serdar Ortaç", "Bülent Ersoy", "İbrahim Tatlıses",
+      "Kemal Sunal", "Cüneyt Arkın", "Müslüm Gürses",
+      "Cem Yılmaz", "Şahan Gökbakar", "Adile Naşit",
+      "Zeki Müren", "Barış Manço", "Ajda Pekkan",
+      "Canan Karatay", "Nusret", "CZN Burak",
+      "Acun Ilıcalı", "Hadise", "Hülya Avşar",
+      "Demet Akalın", "Aleyna Tilki", "Tarkan",
+      "Fatih Terim", "Arda Turan", "Rıdvan Dilmen",
+      "Yılmaz Erdoğan", "Şener Şen", "Ezhel",
+      "Reynmen", "Danilo Zanna", "Recep Tayyip (taklitçisi)",
+      "Cedi Osman", "Killa Hakan", "Sagopa Kajmer"
+    ],
+    roles: ["Menajeri", "Eski eşi", "Muhasebecisi", "Şoförü", "Kuaförü", "İcra memuru", "Hayranı", "Paparazzici", "Komşusu"]
+  },
+  "spor": {
+    name: "Spor", emoji: "⚽",
+    locations: [
+      "Halı saha (Perşembe akşamı)", "Spor salonu (fitness)",
+      "Mahalle basketbol sahası", "Yağlı güreş çadırı",
+      "Milli maç yayını (kahvehane)", "Derbi günü ev partisi",
+      "Maç bileti kuyruğu", "Stadyum tribünü (tezahürat)",
+      "Forma satış dükkanı", "Futbol maçı sonrası kavga",
+      "Koşu parkuru (sabah 6)", "Yüzme havuzu (yaz kursu)",
+      "Deplasman otobüsü", "Antrenman sahası"
+    ],
+    roles: ["Teknik direktör", "Kaleci", "Forvet", "Taraftar", "Hakem", "Spiker", "Masör", "Menajer", "Forma satıcısı"]
+  },
+  "tatil": {
+    name: "Tatil & Deniz", emoji: "🏖️",
+    locations: [
+      "Her şey dahil otel", "Sahil kasabası bar sokağı",
+      "Beach club", "Kamp alanı (çadır kurma)",
+      "Yayla evi", "Tekne turu",
+      "Yamaç paraşütü", "Köy pansiyonu",
+      "Apart otel (bayram dolu)", "Havuz başı animasyon",
+      "Plaj şezlong kavgası", "Termal otel",
+      "Kaplıca", "Tatil köyü disco",
+      "Sahilde kumdan kale", "Çadır kampı (sivrisinek savaşı)"
+    ],
+    roles: ["Turist", "Animatör", "Garson", "Kaptan", "Otelci", "Cankurtaran", "Rehber", "Resepsiyonist"]
+  },
+  "gece": {
+    name: "Gece Hayatı", emoji: "🌙",
+    locations: [
+      "Meyhane (rakı-balık)", "Gece kulübü (dans pisti)",
+      "Türkü bar", "Pavyon", "Teras bar",
+      "Sokak partisi", "Karaoke bar",
+      "Pub (maç yayını)", "Nargile bar",
+      "Festival alanı", "Düğün sonrası after party",
+      "Gece kulübünde kuyruk (kapıda tanıdık arama)"
+    ],
+    roles: ["Barmen", "DJ", "Garson", "Bouncer", "Müzisyen", "Patron", "Müdavim", "Dansçı"]
+  },
+  "devlet": {
+    name: "Devlet Dairesi", emoji: "🏛️",
+    locations: [
+      "Nüfus müdürlüğü", "Noter", "PTT (kargo kuyruğu)",
+      "Tapu dairesi", "Vergi dairesi", "Belediye nikah salonu",
+      "Emniyet müdürlüğü (pasaport)", "Adliye (duruşma salonu)",
+      "SGK (emeklilik başvuru)", "İŞKUR (iş başvurusu)",
+      "E-devlet şifresi alma kuyruğu", "Belediye su abonelik",
+      "Trafik tescil", "Hastane randevu kuyruğu (MHRS)"
+    ],
+    roles: ["Memur", "Müdür", "Vatandaş", "Avukat", "Güvenlik", "Çaycı", "Tercüman", "Stajyer"]
+  },
+  "nostalji": {
+    name: "90'lar & 2000'ler", emoji: "📼",
+    locations: [
+      "Video kaset dükkanı", "Atari salonu",
+      "Lunapark (çarpışan araba)", "Sokak arası futbol (taş kale)",
+      "Bakkalda açma top", "Komşuda TV izleme (tek TV olan ev)",
+      "Kasetçalar başı (karışık kaset)", "Çiklet otomatı",
+      "Yazlık sinema", "Mahalle çeşmesi",
+      "Telefon kulübesi", "Saklambaç (apartman bodrumu)",
+      "İnternet kafe (CS 1.6)", "Nokia 3310 yılan oyunu",
+      "Dondurma arabası melodisi"
+    ],
+    roles: ["Bakkal amca", "Mahalle abisi", "Kapıcı", "Çocuk", "Anne", "Baba", "Komşu teyze", "Postacı"]
+  },
+  "ulasim": {
+    name: "Ulaşım", emoji: "🚌",
+    locations: [
+      "Dolmuş (son koltuk)", "Vapur iskelesi",
+      "Minibüs (müzik açık)", "Taksi (taksimetre kavgası)",
+      "Şehirlerarası otobüs (arka koltuk)", "Tren yolculuğu",
+      "Tramvay", "Servis (sabah uykusu)",
+      "Havalimanı (bagaj bekleme)", "Köy yolu (stabilize)",
+      "Belediye otobüsü (tıklım tıklım)", "Köy minibüsü",
+      "Otostop çekme", "Gece otobüsü (muavin çay servisi)"
+    ],
+    roles: ["Şoför", "Muavin", "Yolcu", "Kondüktör", "Biletçi", "Kaptan", "Hostes", "Taksici"]
+  },
+  "aile": {
+    name: "Aile & Akraba", emoji: "👨‍👩‍👧‍👦",
+    locations: [
+      "Bayram sabahı el öpme turu", "Akraba düğününde dedikodu masası",
+      "Yılbaşı tombala gecesi", "Ramazan iftar sofrası",
+      "Kayınvalide ziyareti", "Torun sevme seansı (nine-dede)",
+      "Aile WhatsApp grubunda tartışma", "Miras paylaşım toplantısı",
+      "Yaz tatili köy evi", "Gurbetçi dayının gelişi",
+      "Çocuğa isim koyma tartışması", "Aile büyüğü nasihat seansı",
+      "Ramazan sahur hazırlığı", "Arife günü mezarlık ziyareti",
+      "Küçük çocuğa harçlık verme anı"
+    ],
+    roles: ["Anne", "Baba", "Kayınvalide", "Kayınpeder", "Damat", "Gelin", "Amca", "Teyze", "Kuzen", "Dede", "Nine"]
+  },
+  "is": {
+    name: "İş Hayatı", emoji: "💼",
+    locations: [
+      "Açık ofis (dedikodu köşesi)", "Toplantı odası (bitmek bilmeyen sunum)",
+      "Öğle arası yemek siparişi tartışması", "Patron odasında maaş pazarlığı",
+      "İş görüşmesi (ter basan)", "Mutfak (buzdolabından yemek çalınması)",
+      "Sigara molası sohbeti", "Cuma mesai bitişi (kaçış planı)",
+      "Stajyer ilk gün", "İstifa mektubu yazma anı",
+      "Ofis doğum günü kutlaması (zoraki)", "Yazıcı bozuldu (IT çağırma)",
+      "Excel tablosu ile boğuşma", "Zoom toplantısı (kamera kapalı)"
+    ],
+    roles: ["Patron", "Müdür", "Stajyer", "İK uzmanı", "Çaycı", "Güvenlik", "Muhasebeci", "Sekreter", "IT'ci"]
+  },
+  "saglik": {
+    name: "Sağlık", emoji: "🏥",
+    locations: [
+      "Devlet hastanesi bekleme salonu", "Aile hekimi sırası",
+      "Diş hekimi koltuğu", "Eczane (ilaç sorgulama)",
+      "Kan alma odası (iğne korkusu)", "Acil servis gece nöbeti",
+      "Göz doktoru (numara ölçme)", "Hastane kantini",
+      "Röntgen bekleme", "Doktora WhatsApp'tan fotoğraf atma",
+      "Anne-babanın ilaç saati hatırlatması", "Hastane otopark kavgası"
+    ],
+    roles: ["Doktor", "Hemşire", "Hasta", "Eczacı", "Laborant", "Ambulans şoförü", "Refakatçi", "Güvenlik"]
+  }
+};
+
+let state = {
+  playerCount: 4,
+  spyCount: 1,
+  selectedCats: new Set(Object.keys(DATA)),
+  currentLocation: null,
+  currentCategory: null,
+  roles: [],
+  currentPlayer: 0,
+  revealed: false,
+  timerSeconds: 480,
+  timerRemaining: 480,
+  timerInterval: null,
+  timerRunning: false
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function changePlayerCount(d) {
+  state.playerCount = Math.max(3, Math.min(12, state.playerCount + d));
+  document.getElementById('playerCount').textContent = state.playerCount;
+  if (state.spyCount >= state.playerCount - 1) {
+    state.spyCount = Math.max(1, state.playerCount - 2);
+    document.getElementById('spyCount').textContent = state.spyCount;
+  }
+}
+
+function changeSpyCount(d) {
+  state.spyCount = Math.max(1, Math.min(state.playerCount - 2, state.spyCount + d));
+  document.getElementById('spyCount').textContent = state.spyCount;
+}
+
+function goToCategories() {
+  renderCategories();
+  showScreen('categories');
+}
+
+function renderCategories() {
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = '';
+  for (const [key, cat] of Object.entries(DATA)) {
+    const card = document.createElement('div');
+    card.className = 'cat-card' + (state.selectedCats.has(key) ? ' selected' : '');
+    card.innerHTML = `<div class="emoji">${cat.emoji}</div><div class="name">${cat.name}</div><div class="count">${cat.locations.length} mekan</div>`;
+    card.onclick = () => {
+      if (state.selectedCats.has(key)) state.selectedCats.delete(key);
+      else state.selectedCats.add(key);
+      card.classList.toggle('selected');
+    };
+    grid.appendChild(card);
+  }
+}
+
+function selectAllCats() {
+  state.selectedCats = new Set(Object.keys(DATA));
+  renderCategories();
+}
+
+function deselectAllCats() {
+  state.selectedCats.clear();
+  renderCategories();
+}
+
+function quickStart() {
+  state.selectedCats = new Set(Object.keys(DATA));
+  startGame();
+}
+
+function startGame() {
+  if (state.selectedCats.size === 0) { alert('En az bir kategori seç!'); return; }
+
+  const allLocations = [];
+  for (const key of state.selectedCats) {
+    for (const loc of DATA[key].locations) {
+      allLocations.push({ location: loc, category: key });
+    }
+  }
+
+  const pick = allLocations[Math.floor(Math.random() * allLocations.length)];
+  state.currentLocation = pick.location;
+  state.currentCategory = pick.category;
+
+  const catData = DATA[pick.category];
+  const availableRoles = [...catData.roles];
+
+  state.roles = [];
+  const spyIndices = new Set();
+  while (spyIndices.size < state.spyCount) {
+    spyIndices.add(Math.floor(Math.random() * state.playerCount));
+  }
+
+  for (let i = 0; i < state.playerCount; i++) {
+    if (spyIndices.has(i)) {
+      state.roles.push({ spy: true });
+    } else {
+      const role = availableRoles.length > 0
+        ? availableRoles.splice(Math.floor(Math.random() * availableRoles.length), 1)[0]
+        : catData.roles[Math.floor(Math.random() * catData.roles.length)];
+      state.roles.push({ spy: false, role, location: pick.location });
+    }
+  }
+
+  state.currentPlayer = 0;
+  state.revealed = false;
+  renderReveal();
+  showScreen('reveal');
+}
+
+function renderReveal() {
+  const area = document.getElementById('revealArea');
+  const p = state.currentPlayer;
+  const total = state.playerCount;
+  const isUnluler = state.currentCategory === 'unluer';
+
+  if (p >= total) {
+    area.innerHTML = `
+      <div class="role-card normal-card fade-in">
+        <div class="role-icon">✅</div>
+        <div class="role-title">Kartlar Dağıtıldı</div>
+        <div class="role-value">Oyun Başlasın!</div>
+        <div class="role-sub">${state.spyCount} casus aramızda...</div>
+      </div>
+      <button class="btn btn-primary" onclick="goToTimer()" style="max-width:320px">Zamanlayıcıya Geç</button>
+    `;
+    document.getElementById('revealSub').textContent = 'Herkes kartını gördü';
+    return;
+  }
+
+  if (!state.revealed) {
+    area.innerHTML = `
+      <div class="progress-bar"><div class="fill" style="width:${(p / total) * 100}%"></div></div>
+      <div class="role-hidden fade-in" onclick="revealCard()">
+        <div class="player-num">Oyuncu ${p + 1}</div>
+        <div class="tap-icon pulse">👆</div>
+        <p>Kartını görmek için dokun</p>
+      </div>
+    `;
+    document.getElementById('revealSub').textContent = `${p + 1}/${total} - Telefonu Oyuncu ${p + 1}'e ver`;
+  }
+}
+
+function revealCard() {
+  state.revealed = true;
+  const area = document.getElementById('revealArea');
+  const role = state.roles[state.currentPlayer];
+  const isUnluler = state.currentCategory === 'unluer';
+  const p = state.currentPlayer;
+  const total = state.playerCount;
+
+  if (role.spy) {
+    area.innerHTML = `
+      <div class="progress-bar"><div class="fill" style="width:${((p + 1) / total) * 100}%"></div></div>
+      <div class="role-card spy-card fade-in">
+        <div class="role-icon">🕵️</div>
+        <div class="role-title">Sen</div>
+        <div class="role-value" style="color:var(--accent)">CASUSSUN!</div>
+        <div class="role-sub">${isUnluler ? 'Kim olduğunu bul!' : 'Mekanı bul!'}</div>
+      </div>
+      <button class="btn btn-secondary" onclick="nextPlayer()" style="max-width:320px">Gizle & Sonraki</button>
+    `;
+  } else {
+    area.innerHTML = `
+      <div class="progress-bar"><div class="fill" style="width:${((p + 1) / total) * 100}%"></div></div>
+      <div class="role-card normal-card fade-in">
+        <div class="role-icon">${isUnluler ? '⭐' : '📍'}</div>
+        <div class="role-title">${isUnluler ? 'Kişi' : 'Mekan'}</div>
+        <div class="role-value">${role.location}</div>
+        <div class="role-sub">Rolün: ${role.role}</div>
+      </div>
+      <button class="btn btn-secondary" onclick="nextPlayer()" style="max-width:320px">Gizle & Sonraki</button>
+    `;
+  }
+}
+
+function nextPlayer() {
+  state.currentPlayer++;
+  state.revealed = false;
+  renderReveal();
+}
+
+function goToTimer() {
+  const isUnluler = state.currentCategory === 'unluer';
+  document.getElementById('locationDisplay').textContent = state.currentLocation;
+  document.querySelector('#locationHint .label').textContent = isUnluler ? 'Kişi' : 'Mekan / Kişi';
+  document.getElementById('locationHint').style.display = 'none';
+  resetTimer();
+  showScreen('timer');
+}
+
+function setTimer(seconds) {
+  state.timerSeconds = seconds;
+  state.timerRemaining = seconds;
+  state.timerRunning = false;
+  clearInterval(state.timerInterval);
+  document.getElementById('timerToggle').textContent = 'Başlat';
+  updateTimerDisplay();
+  document.querySelectorAll('#timerPresets .btn-small').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function toggleTimer() {
+  if (state.timerRunning) {
+    clearInterval(state.timerInterval);
+    state.timerRunning = false;
+    document.getElementById('timerToggle').textContent = 'Devam';
+  } else {
+    state.timerRunning = true;
+    document.getElementById('timerToggle').textContent = 'Durdur';
+    state.timerInterval = setInterval(() => {
+      state.timerRemaining--;
+      if (state.timerRemaining <= 0) {
+        clearInterval(state.timerInterval);
+        state.timerRunning = false;
+        state.timerRemaining = 0;
+        document.getElementById('timerToggle').textContent = 'Bitti!';
+        try { navigator.vibrate(500); } catch(e) {}
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(state.timerInterval);
+  state.timerRunning = false;
+  state.timerRemaining = state.timerSeconds;
+  document.getElementById('timerToggle').textContent = 'Başlat';
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(state.timerRemaining / 60);
+  const s = state.timerRemaining % 60;
+  const display = document.getElementById('timerDisplay');
+  display.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  display.className = 'timer-display';
+  if (state.timerRemaining <= 30) display.classList.add('danger');
+  else if (state.timerRemaining <= 60) display.classList.add('warning');
+}
+
+function showLocations() {
+  const grid = document.getElementById('locationListGrid');
+  grid.innerHTML = '';
+  for (const key of state.selectedCats) {
+    const cat = DATA[key];
+    const label = document.createElement('div');
+    label.className = 'cat-label';
+    label.textContent = cat.emoji + ' ' + cat.name;
+    grid.appendChild(label);
+    for (const loc of cat.locations) {
+      const item = document.createElement('div');
+      item.className = 'loc-item';
+      item.textContent = loc;
+      grid.appendChild(item);
+    }
+  }
+  showScreen('locations');
+}
+
+function showRules() { showScreen('rules'); }
+
+renderCategories();
+</script>
+</body>
+</html>
